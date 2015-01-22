@@ -125,12 +125,11 @@ class HTTPClient(object):
             httpPost+="Content-Length: "+length+"\r\n\r\n"
             httpPost+=argsEncode
         else:
-            httpPost+="Content-Length: 0\r\n"
+            httpPost+="Content-Length: 0\r\n\r\n"
         s.send(httpPost)
         
         data=self.recvall(s)
-        print(data)
-        print(httpPost)
+    
         s.close()
         code=self.get_code(data)
         body=self.get_body(data)
