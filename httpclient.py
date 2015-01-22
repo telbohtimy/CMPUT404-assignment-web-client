@@ -33,21 +33,48 @@ class HTTPRequest(object):
         self.body = body
 
 class HTTPClient(object):
-    #def get_host_port(self,url):
-
+    def get_host_port(self,url):
+        if url.count(":")==2:
+            port=url.split("/")
+            port=port[2].split(":")
+            return int(port[1])
+        else:
+            return 80
+    def get_host(self,url):
+         if url.count(":")==2:
+            host=url.split(":")
+            host=host[1].strip("/")
+            return host
+         else:
+            host=url.split("/")
+            host=host[2]
+            return host
+    def get_path(self,url):
+        newpath=""
+        path=url.split("/")
+        for i in range(3,len(path)):
+            newpath+="/"+path[i]
+        if newpath=="":
+            newpath="/"
+        return newpath
     def connect(self, host, port):
-        # use sockets!
-        return None
+        s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.connect((host,port))
+        return s
 
     def get_code(self, data):
-        return None
+        code=data.split("\r\n")
+        code=data.split(" ")[1]
+        return int(code)
 
     def get_headers(self,data):
-        return None
+        data=data.split("\r\n\r\n")
+        return data[0]
 
     def get_body(self, data):
-        return None
-
+        data=data.split("\r\n\r\n")
+        return data[1]
+    
     # read everything from the socket
     def recvall(self, sock):
         buffer = bytearray()
@@ -61,13 +88,52 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
+        code=500
+        body=""
+        path=self.get_path(url)
+        host=self.get_host(url)
+        port=self.get_host_port(url)
+        s=self.connect(host,port)
+
+        httpGet="GET "+path+" HTTP/1.1\r\n"
+        httpGet+="Host: "+host+"\r\n"
+        httpGet+="Accept: */*\r\n\r\n"
+        s.send(httpGet)
+        data=self.recvall(s)
+        s.close()
+ 
+        code=self.get_code(data)
+        body=self.get_body(data)
+ 
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
         code = 500
         body = ""
+        path=self.get_path(url)
+        host=self.get_host(url)
+        port= self.get_host_port(url)
+      
+        s=self.connect(host,port)
+        httpPost="POST "+path+" HTTP/1.1\r\n"
+        httpPost+="Host: "+host+"\r\n"
+        httpPost+="Accept: */*\r\n"
+        httpPost+="Content-Type: application/x-www-form-urlencoded\r\n"
+        if args != None:
+            argsEncode=urllib.urlencode(args)
+            length=str(len(argsEncode))
+            httpPost+="Content-Length: "+length+"\r\n\r\n"
+            httpPost+=argsEncode
+        else:
+            httpPost+="Content-Length: 0\r\n"
+        s.send(httpPost)
+        
+        data=self.recvall(s)
+        print(data)
+        print(httpPost)
+        s.close()
+        code=self.get_code(data)
+        body=self.get_body(data)
         return HTTPRequest(code, body)
 
     def command(self, url, command="GET", args=None):
@@ -85,4 +151,5 @@ if __name__ == "__main__":
     elif (len(sys.argv) == 3):
         print client.command( sys.argv[1], sys.argv[2] )
     else:
-        print client.command( command, sys.argv[1] )    
+        print client.command( command, sys.argv[1] )
+      
