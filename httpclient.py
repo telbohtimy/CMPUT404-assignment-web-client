@@ -34,25 +34,47 @@ class HTTPRequest(object):
 
 class HTTPClient(object):
     def get_host_port(self,url):
-        if url.count(":")==2:
-            port=url.split("/")
-            port=port[2].split(":")
-            return int(port[1])
+        if url[0:4]!="http":
+            if url.count(":")==1:
+                port=url.split(":")
+                port=port[1].split("/")[0]
+                return port
+            else:
+                return 80
         else:
-            return 80
+            if url.count(":")==2:
+                port=url.split("/")
+                port=port[2].split(":")
+                return int(port[1])
+            else:   
+                return 80      
     def get_host(self,url):
-         if url.count(":")==2:
-            host=url.split(":")
-            host=host[1].strip("/")
-            return host
-         else:
-            host=url.split("/")
-            host=host[2]
-            return host
+         if url[0:4]!="http":
+             if url.count(":")==1:
+                 host=url.split(":")
+                 host=host[0].strip("/")
+                 return host
+             else:
+                 host=url.split("/")
+                 host=host[0]
+                 return host        
+         else:  
+             if url.count(":")==2:
+                 host=url.split(":")
+                 host=host[1].strip("/")
+                 return host
+             else:
+                 host=url.split("/")
+                 host=host[2]
+                 return host
     def get_path(self,url):
+        if url[0:4]!="http":
+            start=1  
+        else:
+            start=3
         newpath=""
         path=url.split("/")
-        for i in range(3,len(path)):
+        for i in range(start,len(path)):
             newpath+="/"+path[i]
         if newpath=="":
             newpath="/"
